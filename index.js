@@ -3,7 +3,7 @@ const app = express()
 const port = process.env.PORT || 5000
 const cors = require('cors');
 require('colors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // const jwt = require('jsonwebtoken')
 // require('dotenv').config();
 app.use(cors())
@@ -15,7 +15,7 @@ const db_User = "volunteer_network"
 const db_Password = "6TP9emlkz7QSbjP4"
 
 
-//MongoDB conection
+//MongoDB connection
 const uri = `mongodb+srv://${db_User}:${db_Password}@cluster0.xige0uf.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -69,6 +69,27 @@ app.get('/services_home', async (req, res) => {
     });
   }
 });
+app.get('/service/:id', async (req, res) => {
+  try {
+    const id = req.params.id
+    const query = { _id: new ObjectId(id) }
+    console.log("🚀 ~ file: index.js:76 ~ app.get ~ id:", id)
+    const data = await services.findOne(query)
+    console.log("🚀 ~ file: index.js:78 ~ app.get ~ data:", data)
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: data
+    })
+  }
+  catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 app.get('/services', async (req, res) => {
   try {
     // const page = parseInt(req.query.page)
@@ -77,7 +98,6 @@ app.get('/services', async (req, res) => {
     const query = {}
     const cursor = services.find(query)
     const result = await cursor.toArray()
-    console.log("🚀 ~ file: index.js:64 ~ app.get ~ data:", result)
     // const cursor = services.find(query)
     // const count = await services.estimatedDocumentCount()
     // const data = await cursor.skip(skipNumber).limit(size).toArray()
@@ -99,9 +119,13 @@ app.get('/services', async (req, res) => {
 
 app.post("/orders", async (req, res) => {
   try {
-    const user = req.body;
-    console.log("🚀 ~ file: index.js:103 ~ app.post ~ user:", user)
-    res.send(user)
+    const orders = req.body
+    const result = await serviceOrders.insertOne(orders)
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: result
+    })
   }
   catch (error) {
     console.log(error.name.bgRed, error.message.bold);
