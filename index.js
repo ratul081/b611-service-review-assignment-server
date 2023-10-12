@@ -4,19 +4,15 @@ const port = process.env.PORT || 5000
 const cors = require('cors');
 require('colors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-// const jwt = require('jsonwebtoken')
-// require('dotenv').config();
+const jwt = require('jsonwebtoken')
+require('dotenv').config();
 app.use(cors())
 app.use(express.json())
 
 
-// Database authentication
-const db_User = "volunteer_network"
-const db_Password = "6TP9emlkz7QSbjP4"
-
-
 //MongoDB connection
-const uri = `mongodb+srv://${db_User}:${db_Password}@cluster0.xige0uf.mongodb.net/?retryWrites=true&w=majority`;
+
+const uri = process.env.DB_URL
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 
@@ -43,7 +39,58 @@ const services = database.collection('b611-service-review-assignment_services');
 const servicesReviews = database.collection('b611-service-review-assignment_services_reviews');
 const serviceOrders = database.collection('b611-service-review-assignment_service_orders')
 
+// middleware
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({
+      message: "Unauthorized access"
+    });
+  }
+  console.log("🚀 ~ file: index.js:45 ~ verifyJWT ~ authHeader:", authHeader)
+  const token = authHeader.split(" ")[1];
+  try {
+    // const decoded = jwt.verify(token, process.env.ACCESS_SECRET_TOKEN);
+    // req.decoded = decoded;
+    // next();
+    jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
+      console.log("🚀 ~ file: index.js:50 ~ jwt.verify ~ err:", err)
+      if (err) {
+        return res.status(403).send({ message: "Unauthorized access 403" });
+      }
+      req.decoded = decoded;
+      console.log(decoded);
+      next();
+    })
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.status(500).send({
+      success: false,
+      error: error.message,
+    });
+  }
+}
+app.get('/yo', verifyJWT, (req, res) => {
+  res.send("hi")
+})
+
 //endpoints
+app.post('/jwt', (req, res) => {
+  try {
+    const user = req.body;
+    console.log("🚀 ~ file: index.js:78 ~ app.post ~ user:", user)
+    const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, { expiresIn: '1h' });
+    console.log("🚀 ~ file: index.js:83 ~ app.post ~ process.env.ACCESS_SECRET_TOKEN:", process.env.ACCESS_SECRET_TOKEN)
+    console.log("🚀 ~ file: index.js:83 ~ app.post ~ token:", token)
+    res.send({ token });
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.status(500).send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 app.get('/', (req, res) => {
   res.send("Bhoj Shala server is running")
 })
@@ -69,13 +116,41 @@ app.get('/services_home', async (req, res) => {
     });
   }
 });
+
+app.get('/services', async (req, res) => {
+  try {
+    let page = parseInt(req.query.page)
+    const size = parseInt(req.query.size)
+    const query = {}
+    const cursor = services.find(query)
+    let skipNumber = page * size
+    const count = await services.estimatedDocumentCount()
+    if (skipNumber >= count) {
+      skipNumber = 0
+    }
+    const data = await cursor.skip(skipNumber).limit(size).toArray()
+    console.log(`page= ${page} size= ${size} data = ${data.length} count=${count} skip= ${skipNumber}`);
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: { count, data }
+    })
+  }
+  catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 app.get('/service/:id', async (req, res) => {
   try {
     const id = req.params.id
     const query = { _id: new ObjectId(id) }
-    console.log("🚀 ~ file: index.js:76 ~ app.get ~ id:", id)
     const data = await services.findOne(query)
-    console.log("🚀 ~ file: index.js:78 ~ app.get ~ data:", data)
+    // console.log("🚀 ~ file: index.js:78 ~ app.get ~ data:", data)
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -90,21 +165,24 @@ app.get('/service/:id', async (req, res) => {
     });
   }
 });
-app.get('/services', async (req, res) => {
+
+app.get("/orders", verifyJWT, async (req, res) => {
   try {
-    // const page = parseInt(req.query.page)
-    // const size = parseInt(req.query.size)
-    // const skipNumber = page * size
-    const query = {}
-    const cursor = services.find(query)
+    const decoded = req.decoded
+    if (decoded.email !== req.query.email) {
+      res.status(403).send({ message: 'unauthorized access' })
+    }
+    let query = {}
+    if (req.query.email) {
+      query = {
+        email: req.query.email
+      }
+    }
+    const cursor = serviceOrders.find(query)
     const result = await cursor.toArray()
-    // const cursor = services.find(query)
-    // const count = await services.estimatedDocumentCount()
-    // const data = await cursor.skip(skipNumber).limit(size).toArray()
     res.send({
       status: true,
       massage: "Successfully got the data",
-      // data: { count, services }
       data: result
     })
   }
@@ -115,7 +193,7 @@ app.get('/services', async (req, res) => {
       error: error.message,
     });
   }
-});
+})
 
 app.post("/orders", async (req, res) => {
   try {
@@ -135,6 +213,26 @@ app.post("/orders", async (req, res) => {
     });
   }
 })
+
+
+app.delete("/orders/:id", async (req, res) => {
+  try {
+    const id = req.params.id
+    console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id)
+    const query = { _id: new ObjectId(id) }
+    const result = await serviceOrders.deleteOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    console.log("DELETE", error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+})
+
+
 app.post("/my_reviews", async (req, res) => {
   try {
     const review = req.body;
