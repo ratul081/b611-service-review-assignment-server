@@ -175,7 +175,7 @@ app.get("/orders", verifyJWT, async (req, res) => {
     let query = {}
     if (req.query.email) {
       query = {
-        email: req.query.email
+        ordered_persons_email: req.query.email
       }
     }
     const cursor = serviceOrders.find(query)
@@ -214,7 +214,6 @@ app.post("/orders", async (req, res) => {
   }
 })
 
-
 app.delete("/orders/:id", async (req, res) => {
   try {
     const id = req.params.id
@@ -232,6 +231,45 @@ app.delete("/orders/:id", async (req, res) => {
   }
 })
 
+app.get("/reviews", async (req, res) => {
+  try {
+    const query = {}
+    const cursor = servicesReviews.find(query)
+    const data = await cursor.toArray()
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: data
+    })
+  }
+  catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+})
+
+
+app.post("/reviews", async (req, res) => {
+  try {
+    const reviews = req.body
+    const result = await servicesReviews.insertOne(reviews)
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: result
+    })
+  }
+  catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+})
 
 app.post("/my_reviews", async (req, res) => {
   try {
