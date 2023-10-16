@@ -252,33 +252,6 @@ app.get("/reviews", async (req, res) => {
     });
   }
 });
-app.get("/reviews", verifyJWT, async (req, res) => {
-  try {
-    const decoded = req.decoded;
-    if (decoded.email !== req.query.email) {
-      res.status(403).send({ message: "unauthorized access" });
-    }
-    let query = {};
-    if (req.query.email) {
-      query = {
-        reviewed_persons_email: req.query.email,
-      };
-    }
-    const cursor = serviceOrders.find(query);
-    const result = await cursor.toArray();
-    res.send({
-      status: true,
-      massage: "Successfully got the data",
-      data: result,
-    });
-  } catch (error) {
-    console.log(error.name.bgRed, error.message.bold);
-    res.send({
-      success: false,
-      error: error.message,
-    });
-  }
-});
 
 app.post("/reviews", async (req, res) => {
   try {
@@ -298,11 +271,26 @@ app.post("/reviews", async (req, res) => {
   }
 });
 
-app.post("/my_reviews", async (req, res) => {
+app.get("/my_reviews", verifyJWT, async (req, res) => {
   try {
-    const review = req.body;
-    console.log("🚀 ~ file: index.js:103 ~ app.post ~ review:", review);
-    res.send(review);
+    const decoded = req.decoded;
+    if (decoded.email !== req.query.email) {
+      res.status(403).send({ message: "unauthorized access" });
+    }
+    let query = {};
+    if (req.query.email) {
+      query = {
+        reviewed_persons_email: req.query.email,
+      };
+    }
+    const cursor = servicesReviews.find(query);
+    const result = await cursor.toArray();
+    console.log("🚀 ~ file: index.js:269 ~ app.get ~ result:", result)
+    // res.send({
+    //   status: true,
+    //   massage: "Successfully got the data",
+    //   data: result,
+    // });
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
@@ -311,6 +299,7 @@ app.post("/my_reviews", async (req, res) => {
     });
   }
 });
+
 // app.patch("/my_reviews", async (req, res) => {
 //   try {
 //     const filter = { rating: "N/A" };
