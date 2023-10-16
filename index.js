@@ -50,19 +50,19 @@ function verifyJWT(req, res, next) {
       message: "Unauthorized access",
     });
   }
-  console.log("🚀 ~ file: index.js:45 ~ verifyJWT ~ authHeader:", authHeader);
+  // console.log("🚀 ~ file: index.js:45 ~ verifyJWT ~ authHeader:", authHeader);
   const token = authHeader.split(" ")[1];
   try {
     // const decoded = jwt.verify(token, process.env.ACCESS_SECRET_TOKEN);
     // req.decoded = decoded;
     // next();
     jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
-      console.log("🚀 ~ file: index.js:50 ~ jwt.verify ~ err:", err);
+      // console.log("🚀 ~ file: index.js:50 ~ jwt.verify ~ err:", err);
       if (err) {
         return res.status(403).send({ message: "Unauthorized access 403" });
       }
       req.decoded = decoded;
-      console.log(decoded);
+      // console.log(decoded);
       next();
     });
   } catch (error) {
@@ -81,15 +81,10 @@ app.get("/yo", verifyJWT, (req, res) => {
 app.post("/jwt", (req, res) => {
   try {
     const user = req.body;
-    console.log("🚀 ~ file: index.js:78 ~ app.post ~ user:", user);
+    // console.log("🚀 ~ file: index.js:78 ~ app.post ~ user:", user);
     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
       expiresIn: "1h",
     });
-    console.log(
-      "🚀 ~ file: index.js:83 ~ app.post ~ process.env.ACCESS_SECRET_TOKEN:",
-      process.env.ACCESS_SECRET_TOKEN
-    );
-    console.log("🚀 ~ file: index.js:83 ~ app.post ~ token:", token);
     res.send({ token });
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
@@ -135,9 +130,9 @@ app.get("/services", async (req, res) => {
       skipNumber = 0;
     }
     const data = await cursor.skip(skipNumber).limit(size).toArray();
-    console.log(
-      `page= ${page} size= ${size} data = ${data.length} count=${count} skip= ${skipNumber}`
-    );
+    // console.log(
+    //   `page= ${page} size= ${size} data = ${data.length} count=${count} skip= ${skipNumber}`
+    // );
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -221,7 +216,7 @@ app.post("/orders", async (req, res) => {
 app.delete("/orders/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id);
+    // console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id);
     const query = { _id: new ObjectId(id) };
     const result = await serviceOrders.deleteOne(query);
     res.send(result);
@@ -284,13 +279,14 @@ app.get("/my_reviews", verifyJWT, async (req, res) => {
       };
     }
     const cursor = servicesReviews.find(query);
+    // console.log("🚀 ~ file: index.js:282 ~ app.get ~ cursor:", cursor)
     const result = await cursor.toArray();
-    console.log("🚀 ~ file: index.js:269 ~ app.get ~ result:", result)
-    // res.send({
-    //   status: true,
-    //   massage: "Successfully got the data",
-    //   data: result,
-    // });
+    // console.log("🚀 ~ file: index.js:269 ~ app.get ~ result:", result)
+    res.send({
+      status: true,
+      massage: "Successfully got the data",
+      data: result,
+    });
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
@@ -302,10 +298,10 @@ app.get("/my_reviews", verifyJWT, async (req, res) => {
 
 // app.patch("/my_reviews", async (req, res) => {
 //   try {
-//     const filter = { rating: "N/A" };
+//     const filter = { reviewed_person_email: req.query.email, };
 //     const updateDoc = {
 //       $set: {
-//         rating: false,
+//         reviewed_persons_email: req.query.email,
 //       },
 //     };
 //     const result = await servicesReviews.updateMany(filter, updateDoc);
