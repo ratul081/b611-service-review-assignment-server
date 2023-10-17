@@ -266,6 +266,22 @@ app.post("/reviews", async (req, res) => {
   }
 });
 
+app.delete("/reviews/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    // console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id);
+    const query = { _id: new ObjectId(id) };
+    const result = await servicesReviews.deleteOne(query);
+    res.send(result);
+  } catch (error) {
+    console.log("DELETE", error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 app.get("/my_reviews", verifyJWT, async (req, res) => {
   try {
     const decoded = req.decoded;
@@ -296,24 +312,22 @@ app.get("/my_reviews", verifyJWT, async (req, res) => {
   }
 });
 
-// app.patch("/my_reviews", async (req, res) => {
-//   try {
-//     const filter = { reviewed_person_email: req.query.email, };
-//     const updateDoc = {
-//       $set: {
-//         reviewed_persons_email: req.query.email,
-//       },
-//     };
-//     const result = await servicesReviews.updateMany(filter, updateDoc);
-//     res.send(result)
-//   } catch (error) {
-//     console.log(error.name.bgRed, error.message.bold);
-//     res.send({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// });
+app.patch("/my_reviews/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) };
+    const updatedData = req.body.updatedData
+    const result = await servicesReviews.updateMany(filter, updatedData);
+    res.send(result)
+    // res.send(updatedData)
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
 // app.get("/order", async (req, res) => {
 //   try {
