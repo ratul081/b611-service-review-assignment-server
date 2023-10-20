@@ -16,7 +16,6 @@ const uri = process.env.DB_URL;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 
 const client = new MongoClient(uri, {
-  useNewUrlParser: true, useUnifiedTopology: true,
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
@@ -25,7 +24,7 @@ const client = new MongoClient(uri, {
 });
 async function dbConnect() {
   try {
-    await client.connect();
+    // await client.connect();
     console.log("Database connected".yellow);
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
@@ -51,19 +50,13 @@ function verifyJWT(req, res, next) {
       message: "Unauthorized access",
     });
   }
-  // console.log("🚀 ~ file: index.js:45 ~ verifyJWT ~ authHeader:", authHeader);
   const token = authHeader.split(" ")[1];
   try {
-    // const decoded = jwt.verify(token, process.env.ACCESS_SECRET_TOKEN);
-    // req.decoded = decoded;
-    // next();
     jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
-      // console.log("🚀 ~ file: index.js:50 ~ jwt.verify ~ err:", err);
       if (err) {
         return res.status(403).send({ message: "Unauthorized access 403" });
       }
       req.decoded = decoded;
-      // console.log(decoded);
       next();
     });
   } catch (error) {
@@ -74,17 +67,13 @@ function verifyJWT(req, res, next) {
     });
   }
 }
-app.get("/yo", verifyJWT, (req, res) => {
-  res.send("hi");
-});
 
 //endpoints
 app.post("/jwt", (req, res) => {
   try {
     const user = req.body;
-    // console.log("🚀 ~ file: index.js:78 ~ app.post ~ user:", user);
     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
-      expiresIn: "1h",
+      expiresIn: "5h",
     });
     res.send({ token });
   } catch (error) {
@@ -104,7 +93,6 @@ app.get("/services_home", async (req, res) => {
     const query = {};
     const cursor = services.find(query);
     const data = await cursor.limit(3).toArray();
-    // console.log("🚀 ~ file: index.js:64 ~ app.get ~ data:", result)
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -131,9 +119,7 @@ app.get("/services", async (req, res) => {
       skipNumber = 0;
     }
     const data = await cursor.skip(skipNumber).limit(size).toArray();
-    // console.log(
-    //   `page= ${page} size= ${size} data = ${data.length} count=${count} skip= ${skipNumber}`
-    // );
+  
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -153,7 +139,6 @@ app.get("/service/:id", async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
     const data = await services.findOne(query);
-    // console.log("🚀 ~ file: index.js:78 ~ app.get ~ data:", data)
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -217,7 +202,6 @@ app.post("/orders", async (req, res) => {
 app.delete("/orders/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    // console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id);
     const query = { _id: new ObjectId(id) };
     const result = await serviceOrders.deleteOne(query);
     res.send(result);
@@ -270,7 +254,6 @@ app.post("/reviews", async (req, res) => {
 app.delete("/reviews/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    // console.log("🚀 ~ file: index.js:176 ~ app.delete ~ id:", id);
     const query = { _id: new ObjectId(id) };
     const result = await servicesReviews.deleteOne(query);
     res.send(result);
@@ -296,9 +279,7 @@ app.get("/my_reviews", verifyJWT, async (req, res) => {
       };
     }
     const cursor = servicesReviews.find(query);
-    // console.log("🚀 ~ file: index.js:282 ~ app.get ~ cursor:", cursor)
     const result = await cursor.toArray();
-    // console.log("🚀 ~ file: index.js:269 ~ app.get ~ result:", result)
     res.send({
       status: true,
       massage: "Successfully got the data",
@@ -329,19 +310,6 @@ app.patch("/my_reviews/:id", async (req, res) => {
     });
   }
 });
-
-// app.get("/order", async (req, res) => {
-//   try {
-
-//   }
-//   catch (error) {
-//     console.log(error.name.bgRed, error.message.bold);
-//     res.send({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// })
 
 app.listen(port, () => {
   console.log(`listening on port ${port}`);
